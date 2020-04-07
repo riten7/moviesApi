@@ -10,6 +10,8 @@ router.use(express.json());
 const database = require('./dbConnect');
 let collection = null;
 
+const getMovieId = () => (Math.random().toString(36).replace('0.', ''));
+
 database.initialize(function (dbCollection) {
   collection = dbCollection;
 }, function (err) {
@@ -32,6 +34,7 @@ router.get("/getMovie/:id", (request, response) => {
 
 router.post("/insertMovie", (request, response) => {
   const item = request.body;
+  item.id = getMovieId();
   collection.insertOne(item, (insertError, insertResult) => {
     if (insertError) throw insertError;
     // send back entire updated list, to make sure frontend data is up-to-date
@@ -44,10 +47,12 @@ router.post("/insertMovie", (request, response) => {
 
 router.put("/updateMovie/:id", (request, response) => {
   const item = request.body;
-  collection.updateOne({ id: request.params.id }, { $set: item }, (error, result) => {
-    if (error) throw error;
-    console.log(result);
-    response.json(result);
+  collection.updateOne({ id: request.params.id }, { $set: item }, (updateError, updateResult) => {
+    if (updateError) throw updateError;
+    collection.findOne({ id: request.params.id }, (error, result) => {
+      if (error) throw error;
+      response.json(result);
+    });
   });
 });
 
